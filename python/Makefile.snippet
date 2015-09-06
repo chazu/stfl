@@ -1,0 +1,40 @@
+#
+#  STFL - The Structured Terminal Forms Language/Library
+#  Copyright (C) 2006, 2007  Clifford Wolf <clifford@clifford.at>
+#
+#  This library is free software; you can redistribute it and/or
+#  modify it under the terms of the GNU Lesser General Public
+#  License as published by the Free Software Foundation; either
+#  version 3 of the License, or (at your option) any later version.
+#  
+#  This library is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+#  Lesser General Public License for more details.
+#  
+#  You should have received a copy of the GNU Lesser General Public
+#  License along with this library; if not, write to the Free Software
+#  Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston,
+#  MA 02110-1301 USA
+#
+
+PYTHON_VERSION = $(shell python -V 2>&1 | cut -f2 -d' ' | cut -f1-2 -d'.')
+PYTHON_SITEARCH = $(shell python -c "from distutils.sysconfig import get_python_lib; print get_python_lib(1)")
+
+all: python/_stfl.so python/stfl.py python/stfl.pyc
+
+install: install_python
+
+python/_stfl.so python/stfl.py python/stfl.pyc: libstfl.a stfl.h python/stfl.i swig/*.i
+	cd python && swig -python -threads stfl.i
+	gcc -shared -pthread -fPIC python/stfl_wrap.c -I/usr/include/python$(PYTHON_VERSION) \
+		-I. libstfl.a -lncursesw -o python/_stfl.so
+	cd python && python -c 'import stfl'
+
+install_python: python/_stfl.so python/stfl.py python/stfl.pyc
+	mkdir -p $(DESTDIR)$(PYTHON_SITEARCH)/
+	mkdir -p $(DESTDIR)$(PYTHON_SITEARCH)/lib-dynload/
+	cp python/_stfl.so $(DESTDIR)$(PYTHON_SITEARCH)/lib-dynload/
+	cp python/stfl.pyc $(DESTDIR)$(PYTHON_SITEARCH)/
+	cp python/stfl.py $(DESTDIR)$(PYTHON_SITEARCH)/
+

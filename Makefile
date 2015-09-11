@@ -21,13 +21,19 @@
 include Makefile.cfg
 
 export CC = gcc -pthread
-export CFLAGS += -I. -Wall -Os -ggdb -D_GNU_SOURCE -fPIC
-export LDLIBS += -lncursesw
+export CFLAGS += -I. -Wall -Os -ggdb -D_GNU_SOURCE -fPIC -I
+export CFLAGS += -I/usr/local/opt/ncurses/include -I/usr/local/opt/libiconv/include
+export LDLIBS += -lncursesw -liconv
+export LDLIBS += -L/usr/local/opt/ncurses/lib -L/usr/local/opt/libiconv/lib
+
 
 SONAME  := libstfl.so.0
+DYLIBNAME := libstfl.dylib
 VERSION := 0.24
 
 all: libstfl.so.$(VERSION) libstfl.a example
+
+mac: libstfl.dylib libstfl.a example
 
 example: libstfl.a example.o
 
@@ -40,6 +46,10 @@ libstfl.a: public.o base.o parser.o dump.o style.o binding.o iconv.o \
 libstfl.so.$(VERSION): public.o base.o parser.o dump.o style.o binding.o iconv.o \
                        $(patsubst %.c,%.o,$(wildcard widgets/*.c))
 	$(CC) -shared -Wl,-soname,$(SONAME) -o $@ $(LDLIBS) $^
+
+libstfl.dylib: public.o base.o parser.o dump.o style.o binding.o iconv.o \
+                       $(patsubst %.c,%.o,$(wildcard widgets/*.c))
+	$(CC) -dynamiclib -Wl -current_version 0.24 -o $@ $(LDLIBS) $^
 
 clean:
 	rm -f libstfl.a example core core.* *.o Makefile.deps
